@@ -1,6 +1,6 @@
 # Network Dynamics Simulation and Estimation
 
-This project simulates and analyzes the dynamics of a discrete-time linear network autoregressive model. The goal is to study how the states of nodes in a network evolve over time under the influence of internal interactions, external inputs, and random noise. The project also estimates the influence matrix $` \mathbf{A} `$ from simulated data and compares it with the true matrix.
+This project simulates and analyzes the dynamics of a discrete-time linear network autoregressive model. The goal is to study how the states of nodes in a network evolve over time under the influence of internal interactions, external inputs, and random noise. The project also estimates the influence matrix $\mathbf{A}$ from simulated data and compares it with the true matrix.
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -16,18 +16,16 @@ This project simulates and analyzes the dynamics of a discrete-time linear netwo
 
 The system is governed by the following equation:
 
-$$
-\mathbf{y}_t = \mathbf{A} \mathbf{y}_{t-1} + \mathbf{B} \mathbf{x}_t + \mathbf{\epsilon}_t,
-$$
+$$\mathbf{y}_t = \mathbf{A} \mathbf{y}_{t-1} + \mathbf{B} \mathbf{x}_t + \mathbf{\epsilon}_t$$
 
 where:
 - $\mathbf{y}_t$: State vector of the network at time $ t $.
-- $ \mathbf{A} $: Influence matrix encoding interactions between nodes.
-- $ \mathbf{B} $: External influence matrix encoding how external inputs affect nodes.
-- $ \mathbf{x}_t $: External input vector at time $ t $.
-- $ \mathbf{\epsilon}_t $: Noise vector at time $ t $.
+- $\mathbf{A}$: Influence matrix encoding interactions between nodes.
+- $\mathbf{B}$: External influence matrix encoding how external inputs affect nodes.
+- $\mathbf{x}_t$: External input vector at time $ t $.
+- $\mathbf{\epsilon}_t$: Noise vector at time $ t $.
 
-The project generates synthetic data, simulates the network dynamics, estimates $ \mathbf{A} $, and visualizes the results.
+The project generates synthetic data, simulates the network dynamics, estimates $\mathbf{A}$, and visualizes the results.
 
 ---
 
