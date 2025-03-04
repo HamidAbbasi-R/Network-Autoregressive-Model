@@ -16,12 +16,12 @@ This project simulates and analyzes the dynamics of a discrete-time linear netwo
 
 The system is governed by the following equation:
 
-$`
+$$
 \mathbf{y}_t = \mathbf{A} \mathbf{y}_{t-1} + \mathbf{B} \mathbf{x}_t + \mathbf{\epsilon}_t,
-`$
+$$
 
 where:
-- $ \mathbf{y}_t $: State vector of the network at time $ t $.
+- $\mathbf{y}_t$: State vector of the network at time $ t $.
 - $ \mathbf{A} $: Influence matrix encoding interactions between nodes.
 - $ \mathbf{B} $: External influence matrix encoding how external inputs affect nodes.
 - $ \mathbf{x}_t $: External input vector at time $ t $.
