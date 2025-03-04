@@ -11,33 +11,31 @@ st.sidebar.header("Input Parameters")
 # Network Parameters
 seed = st.sidebar.number_input("Random Seed", min_value=0, value=42)
 
-N = st.sidebar.number_input("Number of Nodes", min_value=2, value=5)
+N = st.sidebar.number_input("Number of Nodes, $N$", min_value=2, value=10)
 radius = st.sidebar.slider("Radius for Random Geometric Graph", min_value=0.1, max_value=1.0, value=0.5, step=0.1)
 
 # Time Vector Parameters
-max_time = st.sidebar.number_input("Maximum Time for Time Vector", min_value=1, value=10)
-num_time_steps = st.sidebar.number_input("Number of Time Steps", min_value=10, value=100)
+max_time = st.sidebar.number_input("Maximum Time for Time Vector", min_value=1, value=6)
+num_time_steps = st.sidebar.number_input("Number of Time Steps", min_value=10, value=500)
 
 # Matrix A Parameters
-max_influence = st.sidebar.slider("Maximum Influence Between Connected Nodes", min_value=0.1, max_value=1.0, value=0.8, step=0.1)
+max_influence = st.sidebar.slider("Maximum Influence Between Connected Nodes, $\\text{max}(\\mathbf{A})$", min_value=0.1, max_value=1.0, value=0.8, step=0.1)
 
 # External Inputs Parameters
-P = st.sidebar.number_input("Number of External Inputs (Features)", min_value=1, value=2)
-input_type = st.sidebar.selectbox("Input Type for x_t", ["sine", "shock"])
-amplitude = st.sidebar.number_input("Amplitude for x_t", min_value=0.1, value=1.0)
-frequency = st.sidebar.number_input("Frequency for x_t", min_value=0.1, value=2.0)
+P = st.sidebar.number_input("Number of External Inputs (Features), $P$", min_value=1, value=2)
+input_type = st.sidebar.selectbox("Type of $\\mathbf{x}_t$", ["sine", "shock"], index=0)
+amplitude = st.sidebar.number_input("Amplitude of $\\mathbf{x}_t$", min_value=0.1, value=1.0)
+frequency = st.sidebar.number_input("Frequency of $\\mathbf{x}_t$", min_value=0.1, value=2.0)
 
 # Initial Conditions Parameters
-lower_bound = st.sidebar.number_input("Lower Bound for Initial Conditions", min_value=-10.0, value=-1.0)
-upper_bound = st.sidebar.number_input("Upper Bound for Initial Conditions", min_value=-10.0, value=1.0)
+abs_bound_IC = st.sidebar.number_input("Absolute Bound for Initial Conditions, $|\\mathbf{y}_0|$", value=1.0)
 
 # Matrix B Parameters
-min_val_B = st.sidebar.number_input("Minimum Value for B", min_value=-1.0, value=-0.5)
-max_val_B = st.sidebar.number_input("Maximum Value for B", min_value=0.0, value=0.5)
+abs_val_B = st.sidebar.number_input("Absolute Bound for Matrix, $|B|$", min_value=-1.0, value=0.5)
 
 # Noise Parameters
-mean_noise = st.sidebar.number_input("Mean for Noise (epsilon)", min_value=-10.0, value=0.0)
-std_dev_noise = st.sidebar.number_input("Standard Deviation for Noise (epsilon)", min_value=0.0, value=1.0)
+mean_noise = st.sidebar.number_input("Mean for Noise, $\\mu_{\\epsilon_t}$", min_value=-10.0, value=0.0)
+std_dev_noise = st.sidebar.number_input("Standard Deviation for Noise, $\\sigma_{\\epsilon_t}$", min_value=0.0, value=1.0)
 
 # Submit Button
 submit = st.sidebar.button("Generate and Estimate")
@@ -109,9 +107,9 @@ if submit:
     adj_matrix = nx.adjacency_matrix(G).todense()
 
     # Generate Matrices and Initial Conditions
-    y0 = utils.generate_initial_conditions(N, lower_bound=lower_bound, upper_bound=upper_bound)
+    y0 = utils.generate_initial_conditions(N, lower_bound=-abs_bound_IC, upper_bound=abs_bound_IC)
     A = utils.generate_matrix_A_from_adjacency(adj_matrix, max_influence=max_influence)
-    B = utils.generate_synthetic_B(N, P, min_val=min_val_B, max_val=max_val_B)
+    B = utils.generate_synthetic_B(N, P, min_val=-abs_val_B, max_val=abs_val_B)
 
     # Generate x_t and epsilon_t
     x_t_specs = {'input_type': input_type, 'amplitude': amplitude, 'frequency': frequency}
