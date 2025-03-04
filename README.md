@@ -1,6 +1,6 @@
 # Network Dynamics Simulation and Estimation
 
-This project simulates and analyzes the dynamics of a discrete-time linear network autoregressive model. The goal is to study how the states of nodes in a network evolve over time under the influence of internal interactions, external inputs, and random noise. The project also estimates the influence matrix $ \mathbf{A} $ from simulated data and compares it with the true matrix.
+This project simulates and analyzes the dynamics of a discrete-time linear network autoregressive model. The goal is to study how the states of nodes in a network evolve over time under the influence of internal interactions, external inputs, and random noise. The project also estimates the influence matrix $` \mathbf{A} `$ from simulated data and compares it with the true matrix.
 
 ## Table of Contents
 1. [Overview](#overview)
