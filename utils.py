@@ -139,14 +139,14 @@ def generate_matrix_A_from_adjacency(AdjMat, max_influence=0.5):
     for i in range(N):
         if AdjMat[i, i] == 0:  # If diagonal entry is zero in G, set it to a small positive value
             AdjMat[i, i] = 1   # Ensure diagonal dominance
-        A[i, i] = np.random.uniform(0.5, 1.0)  # Diagonal entries are positive and larger
+        A[i, i] = np.random.uniform(max_influence/2, max_influence)  # Diagonal entries are positive and larger
     
     # Step 4: Normalize A to ensure stability (eigenvalues within unit circle)
     eigenvalues, _ = np.linalg.eig(A)
     spectral_radius = np.max(np.abs(eigenvalues))
-    A = A / (spectral_radius + 1e-6)  # Scale down A to ensure stability
+    A = A / (spectral_radius)  # Scale down A to ensure stability
     
-    return A
+    return A, np.linalg.eigvals(A)
 
 def generate_sine_wave_x_t(P, t, amplitude=1.0, frequency=1.0, phase=0.0):
     """
@@ -294,8 +294,8 @@ def estimate_A(y_series, B, x_series):
     """
     # Extract dimensions
     # N, T_plus_1 = y_series.shape  # Number of nodes (N) and time steps (T+1)
-    # T = T_plus_1 - 1             # Number of transitions
-    # P = B.shape[1]               # Number of external inputs
+    # T = T_plus_1 - 1              # Number of transitions
+    # P = B.shape[1]                # Number of external inputs
     
     # Construct the design matrix X (previous states)
     X = y_series[:, :-1].T  # Shape (T, N), each row is y_{t-1}
@@ -353,3 +353,146 @@ def generate_x_t(P,t, specs):
     elif specs['input_type'] == 'shock':
         return generate_shock_x_t(P, t, amplitude=specs['amplitude'], frequency=specs['frequency'])
    
+def plot_eigenvalues(eigenvalues_true, eigenvalues_final=None):
+    """
+    Plot the eigenvalues on the complex plane.
+    
+    Parameters:
+        eigenvalues (np.ndarray): Array of eigenvalues.
+    """
+    fig = go.Figure()
+
+    # Add eigenvalues as scatter points
+    fig.add_trace(go.Scatter(
+        x=np.real(eigenvalues_true),
+        y=np.imag(eigenvalues_true),
+        mode='markers',
+        marker=dict(color='blue', size=10),
+        name='Eigenvalues True'
+    ))
+
+    if eigenvalues_final is not None:
+        fig.add_trace(go.Scatter(
+            x=np.real(eigenvalues_final),
+            y=np.imag(eigenvalues_final),
+            mode='markers',
+            marker=dict(color='red', size=10),
+            name='Eigenvalues Final'
+        ))
+
+    # Add unit circle for reference
+    fig.add_shape(
+        type="circle",
+        xref="x",
+        yref="y",
+        x0=-1,
+        y0=-1,
+        x1=1,
+        y1=1,
+        line=dict(color="grey", dash="dash"),
+        name='Unit Circle'
+    )
+
+    fig.update_layout(
+        title='Eigenvalues on the Complex Plane',
+        xaxis_title='Real Part',
+        yaxis_title='Imaginary Part',
+        showlegend=True,
+        xaxis=dict(scaleanchor="y", scaleratio=1),
+        yaxis=dict(scaleanchor="x", scaleratio=1),
+        width=600,
+        height=600,
+    )
+
+    return fig
+
+def generate_eigenvalues(angle_range, radius_range, num_eigenvalues):
+    """
+    Generate a set of eigenvalues within specified angle and radius ranges.
+    
+    Parameters:
+        angle_range (tuple): Range of angles in radians (min_angle, max_angle).
+        radius_range (tuple): Range of radii (min_radius, max_radius).
+        num_eigenvalues (int): Number of eigenvalues to generate.
+        
+    Returns:
+        eigenvalues (np.ndarray): Array of complex eigenvalues within the specified ranges.
+    """
+    # Step 1: Validate inputs
+    min_angle, max_angle = angle_range
+    min_radius, max_radius = radius_range
+
+    # Convert angles from degrees to radians
+    min_angle = np.deg2rad(min_angle)
+    max_angle = np.deg2rad(max_angle)
+    
+    assert min_angle >= 0 and max_angle <= 2 * np.pi, "Angles must be in the range [0, 2π]."
+    assert min_radius >= 0 and max_radius <= 1, "Radii must be in the range [0, 1] for stability."
+    assert min_angle < max_angle, "Angle range must satisfy min_angle < max_angle."
+    assert min_radius < max_radius, "Radius range must satisfy min_radius < max_radius."
+    assert num_eigenvalues > 0, "Number of eigenvalues must be positive."
+    
+    # Step 2: Generate random angles and radii
+    half_num_eigenvalues = num_eigenvalues // 2
+    angles = np.random.uniform(min_angle, max_angle, size=half_num_eigenvalues)
+    radii = np.random.uniform(min_radius, max_radius, size=half_num_eigenvalues)
+    
+    # Step 3: Convert polar coordinates to complex eigenvalues
+    eigenvalues = radii * (np.cos(angles) + 1j * np.sin(angles))
+    
+    # Step 4: Create conjugate pairs
+    eigenvalues = np.concatenate([eigenvalues, np.conj(eigenvalues)])
+    
+    # Step 5: If num_eigenvalues is odd, add one real eigenvalue
+    if num_eigenvalues % 2 != 0:
+        real_eigenvalue = np.random.uniform(min_radius, max_radius)
+        eigenvalues = np.append(eigenvalues, real_eigenvalue)
+    
+    # Step 6: Shuffle eigenvalues to avoid any specific order
+    np.random.shuffle(eigenvalues)
+    
+    return eigenvalues
+
+def generate_matrix_A_from_eigenvalues(eigenvalues, AdjMat=None):
+    """
+    Generate a stable NxN matrix A with given eigenvalues, optionally constrained by an adjacency matrix.
+    
+    Parameters:
+        eigenvalues (list or np.ndarray): List of eigenvalues (must lie within the unit circle for stability).
+        AdjMat (np.ndarray, optional): NxN adjacency matrix of the network (binary or weighted). 
+                                       If provided, A will inherit the sparsity structure of AdjMat.
+    
+    Returns:
+        A (np.ndarray): NxN matrix with the specified eigenvalues, optionally constrained by AdjMat.
+    """
+    # Step 1: Validate eigenvalues
+    eigenvalues = np.array(eigenvalues)
+    assert np.all(np.abs(eigenvalues) < 1), "All eigenvalues must lie within the unit circle for stability."
+    N = len(eigenvalues)
+    
+    # Step 2: Construct a random orthogonal matrix Q (for spectral decomposition)
+    # Using QR decomposition to generate an orthogonal matrix
+    Q, _ = np.linalg.qr(np.random.randn(N, N))
+    
+    # Step 3: Construct the diagonal matrix Lambda with the given eigenvalues
+    Lambda = np.diag(eigenvalues)
+    
+    # Step 4: Reconstruct the matrix A using A = Q @ Lambda @ Q.T
+    A = Q @ Lambda @ Q.T
+    
+    # Step 5: Enforce sparsity based on AdjMat (if provided)
+    if AdjMat is not None:
+        assert AdjMat.shape == (N, N), "Adjacency matrix must be square and match the size of eigenvalues."
+        non_zero_mask = AdjMat != 0  # Identify positions where AdjMat is non-zero
+        
+        # Retain only the values in A where AdjMat is non-zero
+        A = A * non_zero_mask
+        
+        # Ensure diagonal dominance for stability
+        # for i in range(N):
+        #     if AdjMat[i, i] == 0:  # If diagonal entry is zero in AdjMat, set it to 1
+        #         AdjMat[i, i] = 1
+        #     A[i, i] = np.random.uniform(0.5, 1.0)  # Diagonal entries are positive and larger
+    
+    eigenvalues_final = np.linalg.eigvals(A)
+    return A, eigenvalues_final

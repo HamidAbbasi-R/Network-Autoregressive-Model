@@ -19,6 +19,8 @@ max_time = st.sidebar.number_input("Maximum Time for Time Vector", min_value=1, 
 num_time_steps = st.sidebar.number_input("Number of Time Steps", min_value=10, value=500)
 
 # Matrix A Parameters
+# angle_min, angle_max = st.sidebar.slider("Angle Range for Eigenvalues of Adjacency Matrix", min_value=0, max_value=180, value=(0, 180))
+# r_min, r_max = st.sidebar.slider("Radius Range for Eigenvalues of Adjacency Matrix", min_value=0.0, max_value=1.0, value=(0.0, 1.0))
 max_influence = st.sidebar.slider("Maximum Influence Between Connected Nodes, $\\text{max}(\\mathbf{A})$", min_value=0.1, max_value=1.0, value=0.8, step=0.1)
 
 # External Inputs Parameters
@@ -38,7 +40,7 @@ mean_noise = st.sidebar.number_input("Mean for Noise, $\\mu_{\\epsilon_t}$", min
 std_dev_noise = st.sidebar.number_input("Standard Deviation for Noise, $\\sigma_{\\epsilon_t}$", min_value=0.0, value=1.0)
 
 # Submit Button
-submit = st.sidebar.button("Generate and Estimate")
+# submit = st.sidebar.button("Generate and Estimate")
 
 # Streamlit App
 st.title("Network Dynamics Simulation and Estimation")
@@ -95,49 +97,54 @@ To ensure stable dynamics, we normalize $ \\mathbf{A} $ such that its spectral r
 Let’s proceed to configure the parameters and simulate the network dynamics!
 """)
 
-if submit:
-    # Set Random Seed
-    utils.set_seed(seed)
+# if submit:
+# Set Random Seed
+utils.set_seed(seed)
 
-    # Generate Time Vector
-    time_vector = np.linspace(0, max_time, num_time_steps)
+# Generate Time Vector
+time_vector = np.linspace(0, max_time, num_time_steps)
 
-    # Generate Network
-    G = nx.random_geometric_graph(N, radius)
-    adj_matrix = nx.adjacency_matrix(G).todense()
+# Generate Network
+G = nx.random_geometric_graph(N, radius)
+adj_matrix = nx.adjacency_matrix(G).todense()
 
-    # Generate Matrices and Initial Conditions
-    y0 = utils.generate_initial_conditions(N, lower_bound=-abs_bound_IC, upper_bound=abs_bound_IC)
-    A = utils.generate_matrix_A_from_adjacency(adj_matrix, max_influence=max_influence)
-    B = utils.generate_synthetic_B(N, P, min_val=-abs_val_B, max_val=abs_val_B)
+# Generate Matrices and Initial Conditions
+y0 = utils.generate_initial_conditions(N, lower_bound=-abs_bound_IC, upper_bound=abs_bound_IC)
+A, eigenvalues = utils.generate_matrix_A_from_adjacency(adj_matrix, max_influence=max_influence)
+# eigenvalues_true = utils.generate_eigenvalues([angle_min, angle_max], [r_min, r_max], N)
+# A, eigenvalues_final = utils.generate_matrix_A_from_eigenvalues(eigenvalues_true, adj_matrix)
 
-    # Generate x_t and epsilon_t
-    x_t_specs = {'input_type': input_type, 'amplitude': amplitude, 'frequency': frequency}
-    x_t = utils.generate_x_t(P, time_vector, x_t_specs)
-    epsilon_t = utils.generate_noise(N, time_vector, mean=mean_noise, std_dev=std_dev_noise)
+B = utils.generate_synthetic_B(N, P, min_val=-abs_val_B, max_val=abs_val_B)
 
-    # Simulate Network Dynamics
-    y_series = utils.simulate_network_dynamics(A, B, x_t, epsilon_t, y0, time_vector)
+# Generate x_t and epsilon_t
+x_t_specs = {'input_type': input_type, 'amplitude': amplitude, 'frequency': frequency}
+x_t = utils.generate_x_t(P, time_vector, x_t_specs)
+epsilon_t = utils.generate_noise(N, time_vector, mean=mean_noise, std_dev=std_dev_noise)
 
-    # Estimate A_hat
-    A_hat = utils.estimate_A(y_series, B, x_t)
+# Simulate Network Dynamics
+y_series = utils.simulate_network_dynamics(A, B, x_t, epsilon_t, y0, time_vector)
 
-    # Compare Matrices
-    mae, mse, rmse = utils.compare_matrices(A, A_hat)
-    st.write(f"Comparison Metrics: MAE={mae:.4f}, MSE={mse:.4f}, RMSE={rmse:.4f}")
+# Estimate A_hat
+A_hat = utils.estimate_A(y_series, B, x_t)
+# Compare Matrices
+mae, mse, rmse = utils.compare_matrices(A, A_hat)
+st.write(f"Comparison Metrics: MAE={mae:.4f}, MSE={mse:.4f}, RMSE={rmse:.4f}")
 
-    # Display Outputs
-    st.header("Network Graph")
-    st.plotly_chart(utils.plot_network_graph(G))
+# Display Outputs
+st.header("Network Graph")
+st.plotly_chart(utils.plot_network_graph(G))
 
-    st.header("Matrices Comparison")
-    st.write("""
-    The plot below shows side-by-side comparison of matrices $ \\mathbf{A} $ and $ \\hat{\\mathbf{A}} $.
-    """)
-    st.plotly_chart(utils.plot_matrix([A, A_hat], labels=["True A", "Estimated A"]))
+st.header("Eigenvalues of Matrix $\\mathbf{A}$")
+st.plotly_chart(utils.plot_eigenvalues(eigenvalues))
+st.header("Matrices Comparison")
+st.write("""
+The plot below shows side-by-side comparison of matrices $ \\mathbf{A} $ and $ \\hat{\\mathbf{A}} $.
+""")
+st.plotly_chart(utils.plot_matrix([A, A_hat], labels=["True A", "Estimated A"]))
+# st.plotly_chart(utils.plot_matrix([A], labels=["True A"]))
 
-    st.header("Time Series, $\\mathbf{y}_t$")
-    st.plotly_chart(utils.plot_time_series(y_series, time_vector))
+st.header("Time Series, $\\mathbf{y}_t$")
+st.plotly_chart(utils.plot_time_series(y_series, time_vector))
 
-    st.header("External Inputs, $\\mathbf{x}_t$")
-    st.plotly_chart(utils.plot_time_series(x_t, time_vector))
+st.header("External Inputs, $\\mathbf{x}_t$")
+st.plotly_chart(utils.plot_time_series(x_t, time_vector))
