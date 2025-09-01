@@ -5,18 +5,20 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import utils
 
+# test comment
+
+
 # Sidebar for Inputs
-st.sidebar.header("Input Parameters")
-
-# Network Parameters
 seed = st.sidebar.number_input("Random Seed", min_value=0, value=42)
-
-N = st.sidebar.number_input("Number of Nodes, $N$", min_value=2, value=10)
+# Network Parameters
+st.sidebar.header("Input Parameters")
+N = st.sidebar.slider("Number of Nodes, $N$", min_value=2, max_value=20, value=5)
 radius = st.sidebar.slider("Radius for Random Geometric Graph", min_value=0.1, max_value=1.0, value=0.5, step=0.1)
 
 # Time Vector Parameters
-max_time = st.sidebar.number_input("Maximum Time for Time Vector", min_value=1, value=6)
+max_time = st.sidebar.number_input("Maximum Time for Time Vector", min_value=1, value=10)
 num_time_steps = st.sidebar.number_input("Number of Time Steps", min_value=10, value=500)
+abs_bound_IC = st.sidebar.number_input("Absolute Bound for Initial Conditions, $|\\mathbf{y}_0|$", value=1.0)
 
 # Matrix A Parameters
 # angle_min, angle_max = st.sidebar.slider("Angle Range for Eigenvalues of Adjacency Matrix", min_value=0, max_value=180, value=(0, 180))
@@ -24,23 +26,18 @@ num_time_steps = st.sidebar.number_input("Number of Time Steps", min_value=10, v
 max_influence = st.sidebar.slider("Maximum Influence Between Connected Nodes, $\\text{max}(\\mathbf{A})$", min_value=0.1, max_value=1.0, value=0.8, step=0.1)
 
 # External Inputs Parameters
-P = st.sidebar.number_input("Number of External Inputs (Features), $P$", min_value=1, value=2)
-input_type = st.sidebar.selectbox("Type of $\\mathbf{x}_t$", ["sine", "shock"], index=0)
+st.sidebar.write("___")
+st.sidebar.header("External Influence and Noise Parameters")
+P = st.sidebar.slider("Number of External Inputs (Features), $P$", min_value=1, max_value=20, value=2)
+# input_type = st.sidebar.selectbox("Type of $\\mathbf{x}_t$", ["sine", "shock"], index=0)
+input_type = st.sidebar.radio("Type of $\\mathbf{x}_t$", ["sine", "shock"], index=0)
 amplitude = st.sidebar.number_input("Amplitude of $\\mathbf{x}_t$", min_value=0.1, value=1.0)
 frequency = st.sidebar.number_input("Frequency of $\\mathbf{x}_t$", min_value=0.1, value=2.0)
-
-# Initial Conditions Parameters
-abs_bound_IC = st.sidebar.number_input("Absolute Bound for Initial Conditions, $|\\mathbf{y}_0|$", value=1.0)
-
-# Matrix B Parameters
 abs_val_B = st.sidebar.number_input("Absolute Bound for Matrix, $|B|$", min_value=-1.0, value=0.5)
+std_dev_noise = st.sidebar.number_input("Standard Deviation for Noise, $\\sigma_{\\epsilon_t}$", min_value=0.1, value=1.0)
+mean_noise = 0
 
-# Noise Parameters
-mean_noise = st.sidebar.number_input("Mean for Noise, $\\mu_{\\epsilon_t}$", min_value=-10.0, value=0.0)
-std_dev_noise = st.sidebar.number_input("Standard Deviation for Noise, $\\sigma_{\\epsilon_t}$", min_value=0.0, value=1.0)
 
-# Submit Button
-# submit = st.sidebar.button("Generate and Estimate")
 
 # Streamlit App
 st.title("Network Dynamics Simulation and Estimation")
@@ -136,15 +133,15 @@ st.plotly_chart(utils.plot_network_graph(G))
 
 st.header("Eigenvalues of Matrix $\\mathbf{A}$")
 st.plotly_chart(utils.plot_eigenvalues(eigenvalues))
+
+st.header("Time Series, $\\mathbf{y}_t$")
+st.plotly_chart(utils.plot_time_series(y_series, time_vector, 'Node'))
+
+st.header("External Inputs, $\\mathbf{x}_t$")
+st.plotly_chart(utils.plot_time_series(x_t, time_vector, 'Feature'))
+
 st.header("Matrices Comparison")
 st.write("""
 The plot below shows side-by-side comparison of matrices $ \\mathbf{A} $ and $ \\hat{\\mathbf{A}} $.
 """)
 st.plotly_chart(utils.plot_matrix([A, A_hat], labels=["True A", "Estimated A"]))
-# st.plotly_chart(utils.plot_matrix([A], labels=["True A"]))
-
-st.header("Time Series, $\\mathbf{y}_t$")
-st.plotly_chart(utils.plot_time_series(y_series, time_vector))
-
-st.header("External Inputs, $\\mathbf{x}_t$")
-st.plotly_chart(utils.plot_time_series(x_t, time_vector))
